@@ -12,7 +12,7 @@ class DataHandler(object):
 
     def get_list(self, base_path, path, show_hidden=False, rsync_check=[], folder_only=False, iscsi_backup=False, usb=False, mode=''):
         if not base_path:
-            base_path = '/home/louis_rpi'
+            base_path = '/home/louis_rpi/Scan_folder'
 
         folder_list = []
         list = sorted(FileExplorer.listdir(os.path.join(base_path, path)))
