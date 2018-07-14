@@ -1,0 +1,58 @@
+#!/bin/sh
+
+db_path="/syslog/sys_log.db"
+sqlite="/opt/bin/sqlite"
+
+os_version=`cat /etc/version | awk '-F' '.' '{print $1}'`
+if [ ${os_version} != '3' ];then
+  . /img/bin/logevent/setsyslog
+fi
+
+if [ $# -lt 1 ]; then 
+  echo "Need At Least one argument : Event ID"
+  exit 1
+fi
+
+module=$4
+  . /raid/data/module/${module}/bin/logevent/sysinfo
+
+event_id=$1
+info_log_path=$log_path"information"
+
+Usage(){
+  echo "Event : "$1
+  echo "Argument Error : "$2
+}
+
+case $event_id in
+  997)
+    info_msg="$3"
+  ;;
+  999)
+    #999   any message
+    info_msg="$2"
+  ;;
+  *)
+    echo "No Such Event ID In Information Pool"
+  ;;
+esac
+
+if [ "${info_msg}" != "" ]; then
+    if [ ! -f "$db_path" ];then
+        $sqlite $db_path "create table sysinfo(Date_time,Details,level)"
+    fi
+    
+    if [ -f "/syslog/information" ];then
+        cat /syslog/information | sed -nr 's/(.{19}) (.*)/\1|\2/p' > /syslog/information_tmp
+        cat /syslog/information_tmp | sed -nr 's/(.{4})\/(.{2})\/(.*)/\1-\2-\3/p' > /syslog/information
+        cat /syslog/information | sed -nr 's/(^.*)/\1|Info/p' > /syslog/information_tmp
+        $sqlite $db_path ".import /syslog/information_tmp sysinfo"
+        rm -rf /syslog/information_tmp
+        rm -rf /syslog/information
+    fi
+    $sqlite $db_path "insert into sysinfo(Date_time,Details,level) values('${time_stamp}',\"[${host_name}] : ${info_msg}\",'Info')"
+    if [ ${os_version} != '3' ];then
+        set_syslog "info" "${info_msg}"
+    fi
+                                                                                                          
+fi

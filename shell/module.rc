@@ -1,0 +1,57 @@
+#/bin/sh
+#
+# skeleton	example file to build /etc/init.d/ scripts.
+#		This file should be used to construct scripts for /etc/init.d.
+#
+#		Written by Miquel van Smoorenburg <miquels@cistron.nl>.
+#		Modified by Davide Libenzi <davidel@xmailserver.org>
+#
+# Version:	@(#)skeleton  1.8  03-Mar-1998  miquels@cistron.nl
+#
+
+DESC="clamav"
+NAME=clamav
+crond_conf="/app/cfg/crond.conf"
+tmp_crond_conf="/tmp/tmp_crond_conf"
+eg1p_1="/raid/data/module/clamav/system/bin/UpdateVirusCode.sh"
+eg1p_2="/raid/data/module/clamav/system/bin/clamscan"
+
+start(){
+    return
+}
+stop(){
+on_eg1=`/bin/cat ${crond_conf} | grep ${eg1p_1}| /usr/bin/wc -l`
+if [ "${on_eg1}" -gt 0 ];
+  then
+        /bin/cat ${crond_conf} | grep -v ${eg1p_1} > ${tmp_crond_conf}
+        mv  ${tmp_crond_conf} ${crond_conf}
+fi
+on_eg1=`/bin/cat ${crond_conf} | grep ${eg1p_2}| /usr/bin/wc -l`
+if [ "${on_eg1}" -gt 0 ];
+  then
+          /bin/cat ${crond_conf} | grep -v ${eg1p_2} > ${tmp_crond_conf}
+          mv  ${tmp_crond_conf} ${crond_conf}
+fi
+cat ${crond_conf} | crontab - -u root
+killall -9 clamscan > /dev/null 2>&1
+killall -9 freshclam > /dev/null 2>&1 
+}
+
+case "$1" in
+  start|boot)
+      start
+	;;
+  stop)
+      stop
+  ;;
+  restart|force-reload)
+	echo -n "Restarting $DESC: "
+	;;
+  *)
+	N=/etc/init.d/$NAME
+	echo "Usage: $N {start|stop|restart|force-reload}" >&2
+	exit 1
+	;;
+esac
+
+exit 0
